@@ -20,8 +20,9 @@ import com.google.gson.reflect.TypeToken;
 import test.Data;
 
 public class WifiService {
-	    
-    public static void testSelect() {
+	static int beforeTotalWifiInfoCnt; 
+	
+	public static void testSelect() {
     	Connection connection = null;
 		PreparedStatement preparedStatement = null;
 		ResultSet rs = null;
@@ -36,25 +37,24 @@ public class WifiService {
 		
 		// 2. 커넥션 객체 생성
 		try {
-		String dbFile = "Wifi-List.db";
-        connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
+			String dbFile = "Wifi-List.db";
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
+	
+	        String sql = " select * "
+	        		+ " from WifiList; ";
 
-        String sql = " select * "
-        		+ " from WifiList; ";
-
-        // sql문 실행
-        preparedStatement = connection.prepareStatement(sql);
-        rs = preparedStatement.executeQuery();
- 
-        // 5. 결과 수행
-        while(rs.next()) {
-            String s1 = rs.getString("controlNum");
-            String s2 = rs.getString("jachigu");
-            String s3 = rs.getString("wifiName");
-
-            System.out.println(s1 + ", " + s2 + ", " + s3);
-        }
-
+	        // sql문 실행
+	        preparedStatement = connection.prepareStatement(sql);
+	        rs = preparedStatement.executeQuery();
+	 
+	        // 5. 결과 수행
+	        while(rs.next()) {
+	            String s1 = rs.getString("controlNum");
+	            String s2 = rs.getString("jachigu");
+	            String s3 = rs.getString("wifiName");
+	
+	            System.out.println(s1 + ", " + s2 + ", " + s3);
+	        }
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	    } finally {
@@ -84,8 +84,75 @@ public class WifiService {
 	        }
 	    }								
     }
-    
-	public static void getWifiFromAPI() {
+	
+	// 테이블 지우기(이전과 데이터가 다르면 테이블 지우고 다시 불러오기)
+	public static void deleteWifiInfo() {
+		
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet rs = null;
+
+        // 1. 드라이버 로드
+        try {
+			Class.forName("org.sqlite.JDBC");
+		
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+        // 2. 커넥션 객체 생성
+        try {
+        	String dbFile = "Wifi-List.db";
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
+
+            String sql = " delete " +
+                    " from WifiList; ";
+
+            preparedStatement = connection.prepareStatement(sql);
+
+            // sql문 실행
+            // 여기도 preparedStatement로 바뀜
+            int affected = preparedStatement.executeUpdate();
+
+            // 5. 결과 수행
+            if(affected > 0) {
+                System.out.println("삭제 성공. 삭제 Data 개수: " + affected);
+            } else {
+                System.out.println("삭제 실패");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            // 6. 객체 연결 해제(close)
+            try {
+                if (rs != null && !rs.isClosed()) {
+                    rs.close();
+                }
+            } catch(SQLException e){
+                e.printStackTrace();
+            }
+
+            try {
+                if (preparedStatement != null && !preparedStatement.isClosed()) {
+                    preparedStatement.close();
+                }
+            } catch(SQLException e){
+                e.printStackTrace();
+            }
+
+            try {
+                if (connection != null && !connection.isClosed()) {
+                    connection.close();
+                }
+            } catch(SQLException e){
+                e.printStackTrace();
+            }
+        }
+	}
+	
+	/*
+	public static void getWifiInfoFromAPI() {
 		String key = "7047526c4d747769313030696244484b";
 		try {
 			Gson gson = new Gson();
@@ -132,7 +199,7 @@ public class WifiService {
 				list = gson.fromJson(slistJson, new TypeToken<List<Data>>(){}.getType());
 				
 				// 받아온 데이터 테이블에 넣기
-				insertWifiToTable(list);
+				insertWifiInfoToTable(list);
 				
 				System.out.println(end + "까지의 데이터 작업완료");
 				cnt++;
@@ -141,8 +208,10 @@ public class WifiService {
 			e.printStackTrace();
 		}
 	}
+	*/
 	
-	public static void getWifiFromAPIBatch() {		
+	// Batch를 통해 와이파이정보 가져와서 Table에 넣기
+	public static void getWifiInfoFromAPIBatch() {		
 		// batch를 위해 객체 미리 생성
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
@@ -164,14 +233,20 @@ public class WifiService {
 			JsonObject jsonWifiInfo = (JsonObject)jsonObject.get("TbPublicWifiInfo");
 			
 			Integer totalDataCnt = Integer.valueOf(jsonWifiInfo.get("list_total_count").toString()); // 총 데이터 개수
-
+			if(beforeTotalWifiInfoCnt != totalDataCnt || beforeTotalWifiInfoCnt == 0) {
+				deleteWifiInfo();
+				beforeTotalWifiInfoCnt = totalDataCnt;
+			} else {
+				beforeTotalWifiInfoCnt = totalDataCnt;
+			}
 // 마지막 개수까지 데이터 불러오기		
 			int loopCnt = (totalDataCnt / 1000) + 1;
 			int cnt = 0;
 			int batchCnt = 0;
 			
 			while(cnt < loopCnt) {
-
+				System.out.println("불러오기 시작");
+				
 				int start = 1 + (cnt * 1000);
 				int end = 1000 + (cnt * 1000);
 				if(end > (int)totalDataCnt) {
@@ -196,11 +271,13 @@ public class WifiService {
 				list = gson.fromJson(slistJson, new TypeToken<List<Data>>(){}.getType());
 				
 				// 받아온 데이터 테이블에 넣기
-				insertWifiToTableBatch(list, batchCnt, totalDataCnt, connection, preparedStatement, rs);
+				insertWifiInfoToTableBatch(list, batchCnt, totalDataCnt, connection, preparedStatement, rs);
 				
 				System.out.println(end + "까지의 데이터 작업완료");
 				cnt++;
-			}			
+			}	
+			System.out.println("불러오기 성공. 불러온 Data 개수: " + totalDataCnt);
+			
 		} catch(Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -231,7 +308,8 @@ public class WifiService {
         }
 	}
 	
-	public static void insertWifiToTable(List<Data> list) {
+	/*
+	public static void insertWifiInfoToTable(List<Data> list) {
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
 		ResultSet rs = null;
@@ -281,7 +359,7 @@ public class WifiService {
             }
             // sql문 실행
             // 여기도 preparedStatement로 바뀜
-            /*
+            
             int affected = preparedStatement.executeUpdate();
 
             // 5. 결과 수행
@@ -290,7 +368,7 @@ public class WifiService {
             } else {
                 System.out.println("저장 실패");
             }
-            */
+            
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -321,8 +399,10 @@ public class WifiService {
             }
         }
 	}
+	*/
 
-	public static void insertWifiToTableBatch(List<Data> list, int batchCnt, int totalDataCnt, Connection connection, PreparedStatement preparedStatement, ResultSet rs) {
+	// insert. getWifiInfoFromAPIBatch 메서드 내부에서 활용
+	public static void insertWifiInfoToTableBatch(List<Data> list, int batchCnt, int totalDataCnt, Connection connection, PreparedStatement preparedStatement, ResultSet rs) {
 		
 		// 1. 드라이버 로드
 		try {
@@ -403,15 +483,14 @@ public class WifiService {
 
 	
 	public static void main(String[] args) {
-//		Data d = new Data("3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3", "3");
-//		insertWifiToTable(d);
-		long beforeTime = System.currentTimeMillis();
-		getWifiFromAPIBatch();
-		long afterTime = System.currentTimeMillis();
-		long secDiffTime = (afterTime - beforeTime) / 1000;
-		System.out.println(secDiffTime);
+
+//		long beforeTime = System.currentTimeMillis();
+//		getWifiInfoFromAPIBatch();
+//		long afterTime = System.currentTimeMillis();
+//		long secDiffTime = (afterTime - beforeTime) / 1000;
+//		System.out.println(secDiffTime);
 		
-//		testSelect();
-		
+		deleteWifiInfo();
+				
 	}
 }

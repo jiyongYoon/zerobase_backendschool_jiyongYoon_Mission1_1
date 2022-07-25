@@ -6,13 +6,11 @@ import java.sql.DriverManager;
 
 public class test2 {
 	public static void main(String[] args) {
-	try {
-		Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
+		try {
+			Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
 		
-	
-	} catch(Exception e) {
-		e.printStackTrace();
-	}
-	
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
