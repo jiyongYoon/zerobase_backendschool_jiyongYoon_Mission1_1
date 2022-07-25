@@ -20,9 +20,9 @@ import com.google.gson.reflect.TypeToken;
 import test.Data;
 
 public class WifiService {
-	static int beforeTotalWifiInfoCnt; 
+	public int beforeTotalWifiInfoCnt; 
 	
-	public static void testSelect() {
+	public void readDataCnt() {
     	Connection connection = null;
 		PreparedStatement preparedStatement = null;
 		ResultSet rs = null;
@@ -40,7 +40,7 @@ public class WifiService {
 			String dbFile = "Wifi-List.db";
 	        connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
 	
-	        String sql = " select * "
+	        String sql = " select count(*) "
 	        		+ " from WifiList; ";
 
 	        // sql문 실행
@@ -49,11 +49,9 @@ public class WifiService {
 	 
 	        // 5. 결과 수행
 	        while(rs.next()) {
-	            String s1 = rs.getString("controlNum");
-	            String s2 = rs.getString("jachigu");
-	            String s3 = rs.getString("wifiName");
+	            int a = rs.getInt("count(*)");
 	
-	            System.out.println(s1 + ", " + s2 + ", " + s3);
+	            System.out.println(a);
 	        }
 	    } catch (SQLException e) {
 	        e.printStackTrace();
@@ -86,7 +84,7 @@ public class WifiService {
     }
 	
 	// 테이블 지우기(이전과 데이터가 다르면 테이블 지우고 다시 불러오기)
-	public static void deleteWifiInfo() {
+	public void deleteWifiInfo() {
 		
         Connection connection = null;
         PreparedStatement preparedStatement = null;
@@ -211,7 +209,7 @@ public class WifiService {
 	*/
 	
 	// Batch를 통해 와이파이정보 가져와서 Table에 넣기
-	public static void getWifiInfoFromAPIBatch() {		
+	public int getWifiInfoFromAPIBatch() {		
 		// batch를 위해 객체 미리 생성
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
@@ -220,6 +218,8 @@ public class WifiService {
 		String key = "7047526c4d747769313030696244484b";
 		
 		try {
+			deleteWifiInfo();
+			
 			Gson gson = new Gson();
 			
 			URL url = new URL("http://openapi.seoul.go.kr:8088/" + key + "/json/TbPublicWifiInfo/1/5/");
@@ -233,19 +233,14 @@ public class WifiService {
 			JsonObject jsonWifiInfo = (JsonObject)jsonObject.get("TbPublicWifiInfo");
 			
 			Integer totalDataCnt = Integer.valueOf(jsonWifiInfo.get("list_total_count").toString()); // 총 데이터 개수
-			if(beforeTotalWifiInfoCnt != totalDataCnt || beforeTotalWifiInfoCnt == 0) {
-				deleteWifiInfo();
-				beforeTotalWifiInfoCnt = totalDataCnt;
-			} else {
-				beforeTotalWifiInfoCnt = totalDataCnt;
-			}
+			beforeTotalWifiInfoCnt = totalDataCnt;
+			
 // 마지막 개수까지 데이터 불러오기		
 			int loopCnt = (totalDataCnt / 1000) + 1;
 			int cnt = 0;
 			int batchCnt = 0;
-			
+			System.out.println("불러오기 시작");
 			while(cnt < loopCnt) {
-				System.out.println("불러오기 시작");
 				
 				int start = 1 + (cnt * 1000);
 				int end = 1000 + (cnt * 1000);
@@ -276,6 +271,7 @@ public class WifiService {
 				System.out.println(end + "까지의 데이터 작업완료");
 				cnt++;
 			}	
+			
 			System.out.println("불러오기 성공. 불러온 Data 개수: " + totalDataCnt);
 			
 		} catch(Exception e) {
@@ -306,6 +302,7 @@ public class WifiService {
                 e.printStackTrace();
             }
         }
+		return beforeTotalWifiInfoCnt;
 	}
 	
 	/*
@@ -402,7 +399,7 @@ public class WifiService {
 	*/
 
 	// insert. getWifiInfoFromAPIBatch 메서드 내부에서 활용
-	public static void insertWifiInfoToTableBatch(List<Data> list, int batchCnt, int totalDataCnt, Connection connection, PreparedStatement preparedStatement, ResultSet rs) {
+	public void insertWifiInfoToTableBatch(List<Data> list, int batchCnt, int totalDataCnt, Connection connection, PreparedStatement preparedStatement, ResultSet rs) {
 		
 		// 1. 드라이버 로드
 		try {
@@ -483,6 +480,8 @@ public class WifiService {
 
 	
 	public static void main(String[] args) {
+		
+		WifiService wifiService = new WifiService();
 
 //		long beforeTime = System.currentTimeMillis();
 //		getWifiInfoFromAPIBatch();
@@ -490,7 +489,11 @@ public class WifiService {
 //		long secDiffTime = (afterTime - beforeTime) / 1000;
 //		System.out.println(secDiffTime);
 		
-		deleteWifiInfo();
+		wifiService.readDataCnt();
+		wifiService.getWifiInfoFromAPIBatch();
+		wifiService.readDataCnt();
+//		deleteWifiInfo();
+//		readDataCnt();
 				
 	}
 }
