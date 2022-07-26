@@ -1,5 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ page import="WifiData.WifiService" %> <%-- java클래스 import / package.class명 --%>
+<%@ page import="WifiData.SearchData" %>
+<%@ page import="javax.servlet.http.HttpServletRequest" %>
+<%@ page import="java.util.*" %>
+    
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,7 +17,13 @@
 	<h1> 와이파이 정보 구하기 </h1>
 </header>
 	<a href="http://localhost:8080/Mission1_1/index.jsp">홈</a> | <a href="http://localhost:8080/Mission1_1/history.jsp">위치 히스토리 목록</a> | <a href="http://localhost:8080/Mission1_1/load-wifi.jsp">Open API 와이파이 정보 가져오기</a> <br><br>
-	<form>LAT: <input type="text"> , LNT: <input type="text"> <button type="button" onclick="getUserLocation()">내 위치 가져오기</button> <button>근처 WIFI정보 가져오기</button> </form>  <br>
+	<form>
+		LAT: <input type="text" id="lat" name="lat"> , LNT: <input type="text" id="lnt" name="lnt">
+		<button type="button" onclick="getUserLocation()">내 위치 가져오기</button> 
+		<button type="submit" method="post" onclick="getNearWifiInfo()">근처 WIFI정보 가져오기</button> 
+	</form>   
+	
+	<br>
 	<table>
 		<tr border="1"; bordercolor="white"; bgcolor="#04B486"; align="center"; width=100%; span style="color:white">
 			<th>거리(Km)</th>
@@ -42,15 +53,32 @@
 	<script>
     function getUserLocation() {
     	navigator.geolocation.getCurrentPosition(function(pos) {
-            console.log(pos);
-            var time = new Date();
-            var latitude = pos.coords.latitude;
-            var longitude = pos.coords.longitude;
-            var currentTime = pos.coords.time;
-            alert("현재 위치는 : " + latitude + ", "+ longitude + ", " + "조회 시간은: " + currentTime);
+    		console.log(pos);
+            var lat = pos.coords.latitude;
+            var lnt = pos.coords.longitude;
+            alert("현재 위치는 : " + lat + ", "+ lnt);
         });
     }
+    
+    function getNearWifiInfo() {
+    	navigator.geolocation.getCurrentPosition(function(pos) {
+	   		console.log(pos);
+	        var lat = pos.coords.latitude;
+	        var lnt = pos.coords.longitude;
+	    	var time = new Date();
+	        alert(lat + " " +lnt + time);
+	        <%
+	        	Date now = new Date();
+	        	String lat = request.getParameter("lat");
+	        	String lnt = request.getParameter("lnt");
+	        	String time = now.toString();
+	        	WifiService wifiService = new WifiService();
+	    		wifiService.insertHisroty(lat, lnt, time);
+        	%>
+    	});
+    }
     </script>
+    
     
 </body>
 </html>
