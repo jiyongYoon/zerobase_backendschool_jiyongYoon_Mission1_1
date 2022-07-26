@@ -11,19 +11,16 @@
 <body>
 	<%
 		int totalCnt = 0;
+
 		try {
-			Class.forName("org.sqlite.JDBC");
-			String dbFile = "Wifi-List.db";
-			Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
-			
 			WifiService wifiService = new WifiService();
-			
 			wifiService.getWifiInfoFromAPIBatch();
 			totalCnt = wifiService.beforeTotalWifiInfoCnt;
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	%>
 	
 	<p style="font-size: 200%; font-weight: bold; text-align: center;"> <%=totalCnt%>개의 WIFI 정보를 정상적으로 저장하였습니다.</p>

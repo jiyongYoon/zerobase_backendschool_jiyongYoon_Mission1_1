@@ -266,7 +266,7 @@ public class WifiService {
 				list = gson.fromJson(slistJson, new TypeToken<List<Data>>(){}.getType());
 				
 				// 받아온 데이터 테이블에 넣기
-				insertWifiInfoToTableBatch(list, batchCnt, totalDataCnt, connection, preparedStatement, rs);
+				insertWifiInfoToTableBatch(list, batchCnt, totalDataCnt);
 				
 				System.out.println(end + "까지의 데이터 작업완료");
 				cnt++;
@@ -399,7 +399,11 @@ public class WifiService {
 	*/
 
 	// insert. getWifiInfoFromAPIBatch 메서드 내부에서 활용
-	public void insertWifiInfoToTableBatch(List<Data> list, int batchCnt, int totalDataCnt, Connection connection, PreparedStatement preparedStatement, ResultSet rs) {
+	public void insertWifiInfoToTableBatch(List<Data> list, int batchCnt, int totalDataCnt) {
+		
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		ResultSet rs = null;
 		
 		// 1. 드라이버 로드
 		try {
