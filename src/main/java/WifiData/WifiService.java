@@ -21,6 +21,9 @@ import test.Data;
 
 public class WifiService {
 	public int beforeTotalWifiInfoCnt; 
+	public String getAbsolutePath() {
+		return "C:\\Users\\Yoon jiyong\\Desktop\\develop\\Zerobase_Backend_School\\db_test\\eclipse-workspace\\Mission1_1\\";
+	}
 	
 	public void readDataCnt() {
     	Connection connection = null;
@@ -38,7 +41,7 @@ public class WifiService {
 		// 2. 커넥션 객체 생성
 		try {
 			String dbFile = "Wifi-List.db";
-	        connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + dbFile);
 	
 	        String sql = " select count(*) "
 	        		+ " from WifiList; ";
@@ -101,7 +104,7 @@ public class WifiService {
         // 2. 커넥션 객체 생성
         try {
         	String dbFile = "Wifi-List.db";
-	        connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + dbFile);
 
             String sql = " delete " +
                     " from WifiList; ";
@@ -416,7 +419,7 @@ public class WifiService {
 		// 2. 커넥션 객체 생성
 		try {
 			String dbFile = "Wifi-List.db";
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile);
+            connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + dbFile);
 
             String sql = " insert into WifiList "
             		+ " (controlNum, jachigu, wifiName, roadAddress, detailAddress, installLocation, installType, installOrg, serviceType, webType, installYear, inAndOut, wifiProp, LAT, LNT, workDate) "
@@ -482,7 +485,6 @@ public class WifiService {
         } 
 	}
 
-	
 	public static void main(String[] args) {
 		
 		WifiService wifiService = new WifiService();

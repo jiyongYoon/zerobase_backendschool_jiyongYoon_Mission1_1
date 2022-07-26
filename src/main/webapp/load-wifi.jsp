@@ -11,20 +11,18 @@
 <body>
 	<%
 		int totalCnt = 0;
-
+	
 		try {
 			WifiService wifiService = new WifiService();
 			wifiService.getWifiInfoFromAPIBatch();
 			totalCnt = wifiService.beforeTotalWifiInfoCnt;
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+	
 	%>
 	
 	<p style="font-size: 200%; font-weight: bold; text-align: center;"> <%=totalCnt%>개의 WIFI 정보를 정상적으로 저장하였습니다.</p>
-	
 	<p style="text-align: center;"><a href="http://localhost:8080/Mission1_1/index.jsp">홈으로 가기</a></p>
 	
 </body>
