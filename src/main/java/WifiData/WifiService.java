@@ -10,6 +10,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -17,18 +22,25 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
-import test.Data;
-
 public class WifiService {
-	public int beforeTotalWifiInfoCnt; 
+	public int beforeTotalWifiInfoCnt;
+	public final String HistoryDbFile = "Load-Histroy.db";
+	public final String HistoryDbTable = "History";
+	
+	public final String ListDbFile = "Wifi-List.db";
+	public final String ListDbTable = "WifiList";
+	
 	public String getAbsolutePath() {
 		return "C:\\Users\\Yoon jiyong\\Desktop\\develop\\Zerobase_Backend_School\\db_test\\eclipse-workspace\\Mission1_1\\";
 	}
 	
-	public void readDataCnt() {
-    	Connection connection = null;
+	
+	// Wifi-History관련
+	public int readHistoryDataCnt() {
+		Connection connection = null;
 		PreparedStatement preparedStatement = null;
 		ResultSet rs = null;
+		int a = 0;
 		
 		// 1. 드라이버 로드
 		try {
@@ -40,11 +52,10 @@ public class WifiService {
 		
 		// 2. 커넥션 객체 생성
 		try {
-			String dbFile = "Wifi-List.db";
-	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + dbFile);
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + HistoryDbFile);
 	
 	        String sql = " select count(*) "
-	        		+ " from WifiList; ";
+	        		+ " from " + HistoryDbTable + " ; ";
 
 	        // sql문 실행
 	        preparedStatement = connection.prepareStatement(sql);
@@ -52,7 +63,7 @@ public class WifiService {
 	 
 	        // 5. 결과 수행
 	        while(rs.next()) {
-	            int a = rs.getInt("count(*)");
+	            a = rs.getInt("count(*)");
 	
 	            System.out.println(a);
 	        }
@@ -83,7 +94,144 @@ public class WifiService {
 	        } catch(SQLException e){
 	            e.printStackTrace();
 	        }
-	    }								
+	    }
+		return a;
+	}
+	
+	public void insertHisroty(String inputLat, String inputLnt, String getTime) {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		ResultSet rs = null;
+		
+		SearchData searchData = new SearchData(readHistoryDataCnt() + 1, inputLat, inputLnt, getTime, false);
+		
+		// 1. 드라이버 로드
+		try {
+			Class.forName("org.sqlite.JDBC");
+		
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		// 2. 커넥션 객체 생성
+		try {
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + HistoryDbFile);
+	
+	        String sql = " insert into " + HistoryDbTable + 
+	        		" (num, LAT, LNT, loadDate, note) " +
+	        		" values " + 
+	        		" (?, ?, ?, ?, ?); ";
+            
+            preparedStatement = connection.prepareStatement(sql);
+            
+            preparedStatement.setInt(1, searchData.getId());
+            preparedStatement.setString(2, searchData.getLAT());
+            preparedStatement.setString(3, searchData.getLNT());
+            preparedStatement.setString(4, searchData.getSearchDateTime());
+            preparedStatement.setBoolean(5, false);
+
+	        // sql문 실행
+            int affected = preparedStatement.executeUpdate();
+
+            // 5. 결과 수행
+            if(affected > 0) {
+                System.out.println("입력 성공. 입력 Data 개수: " + affected);
+            } else {
+                System.out.println("입력 실패");
+            }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        // 6. 객체 연결 해제(close)
+	        try {
+	            if (rs != null && !rs.isClosed()) {
+	                rs.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (preparedStatement != null && !preparedStatement.isClosed()) {
+	                preparedStatement.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (connection != null && !connection.isClosed()) {
+	                connection.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	    }
+	}
+	
+	
+	// Wifi-List관련
+	// List 데이터 개수 리턴
+	public int readDataCnt() {
+    	Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		ResultSet rs = null;
+		int a = 0;
+		
+		// 1. 드라이버 로드
+		try {
+			Class.forName("org.sqlite.JDBC");
+		
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		// 2. 커넥션 객체 생성
+		try {
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + ListDbFile);
+	
+	        String sql = " select count(*) "
+	        		+ " from " + ListDbTable + " ; ";
+
+	        // sql문 실행
+	        preparedStatement = connection.prepareStatement(sql);
+	        rs = preparedStatement.executeQuery();
+	 
+	        // 5. 결과 수행
+	        while(rs.next()) {
+	            a = rs.getInt("count(*)");
+	
+	            System.out.println(a);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        // 6. 객체 연결 해제(close)
+	        try {
+	            if (rs != null && !rs.isClosed()) {
+	                rs.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (preparedStatement != null && !preparedStatement.isClosed()) {
+	                preparedStatement.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (connection != null && !connection.isClosed()) {
+	                connection.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	    }
+		return a;
     }
 	
 	// 테이블 지우기(이전과 데이터가 다르면 테이블 지우고 다시 불러오기)
@@ -103,8 +251,7 @@ public class WifiService {
 
         // 2. 커넥션 객체 생성
         try {
-        	String dbFile = "Wifi-List.db";
-	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + dbFile);
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + ListDbFile);
 
             String sql = " delete " +
                     " from WifiList; ";
@@ -418,10 +565,9 @@ public class WifiService {
 		
 		// 2. 커넥션 객체 생성
 		try {
-			String dbFile = "Wifi-List.db";
-            connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + dbFile);
+            connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + ListDbFile);
 
-            String sql = " insert into WifiList "
+            String sql = " insert into " + ListDbTable
             		+ " (controlNum, jachigu, wifiName, roadAddress, detailAddress, installLocation, installType, installOrg, serviceType, webType, installYear, inAndOut, wifiProp, LAT, LNT, workDate) "
             		+ " values "
             		+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); ";
@@ -482,7 +628,32 @@ public class WifiService {
 
         } catch (SQLException e) {
             e.printStackTrace();
-        } 
+        } finally {
+	        // 6. 객체 연결 해제(close)
+	        try {
+	            if (rs != null && !rs.isClosed()) {
+	                rs.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (preparedStatement != null && !preparedStatement.isClosed()) {
+	                preparedStatement.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (connection != null && !connection.isClosed()) {
+	                connection.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	    }
 	}
 
 	public static void main(String[] args) {
@@ -495,11 +666,9 @@ public class WifiService {
 //		long secDiffTime = (afterTime - beforeTime) / 1000;
 //		System.out.println(secDiffTime);
 		
-		wifiService.readDataCnt();
-		wifiService.getWifiInfoFromAPIBatch();
-		wifiService.readDataCnt();
-//		deleteWifiInfo();
-//		readDataCnt();
+//		wifiService.readDataCnt();
+//		wifiService.getWifiInfoFromAPIBatch();
+//		wifiService.readDataCnt();
 				
 	}
 }
