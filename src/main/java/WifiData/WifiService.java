@@ -98,6 +98,81 @@ public class WifiService {
 		return a;
 	}
 	
+	// 조회이력 list로 출력하는 메서드
+	public ArrayList<SearchData> readHistoryData() {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		ResultSet rs = null;
+		
+		int num = 0;
+		String lat = "";
+		String lnt = "";
+		String loadDate = "";
+		boolean delete = false;
+		
+		ArrayList<SearchData> list = new ArrayList<>();
+		
+		// 1. 드라이버 로드
+		try {
+			Class.forName("org.sqlite.JDBC");
+		
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		// 2. 커넥션 객체 생성
+		try {
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + HistoryDbFile);
+	
+	        String sql = " select * "
+	        		+ " from " + HistoryDbTable + " ; ";
+	        
+	        // sql문 실행
+	        preparedStatement = connection.prepareStatement(sql);
+	        rs = preparedStatement.executeQuery();
+	 
+	        // 5. 결과 수행
+	        while(rs.next()) {
+	        	num = rs.getInt("num");
+	    		lat = rs.getString("LAT");
+	    		lnt = rs.getString("LNT");
+	    		loadDate = rs.getString("loadDate");
+	    		delete = rs.getBoolean("note");
+	    		SearchData sd = new SearchData(num, lat, lnt, loadDate, delete);
+	    		list.add(sd);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        // 6. 객체 연결 해제(close)
+	        try {
+	            if (rs != null && !rs.isClosed()) {
+	                rs.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (preparedStatement != null && !preparedStatement.isClosed()) {
+	                preparedStatement.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (connection != null && !connection.isClosed()) {
+	                connection.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	    }
+		return list;
+	}
+
+	
 	public void insertHisroty(String inputLat, String inputLnt, String getTime) {
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
@@ -169,6 +244,71 @@ public class WifiService {
 	    }
 	}
 	
+	public void deleteHistory(String loadDate) {
+		Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet rs = null;
+
+        // 1. 드라이버 로드
+        try {
+			Class.forName("org.sqlite.JDBC");
+		
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+        // 2. 커넥션 객체 생성
+        try {
+	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + HistoryDbFile);
+
+            String sql = " delete " +
+                    " from " + HistoryDbTable +
+                    " where loadDate = ? ; ";
+
+            preparedStatement = connection.prepareStatement(sql);
+// 수정필요   
+            preparedStatement.setString(1, loadDate);
+
+            // sql문 실행
+            // 여기도 preparedStatement로 바뀜
+            int affected = preparedStatement.executeUpdate();
+
+            // 5. 결과 수행
+            if(affected > 0) {
+                System.out.println("삭제 성공. 삭제 Data 개수: " + affected);
+            } else {
+                System.out.println("삭제 실패");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            // 6. 객체 연결 해제(close)
+            try {
+                if (rs != null && !rs.isClosed()) {
+                    rs.close();
+                }
+            } catch(SQLException e){
+                e.printStackTrace();
+            }
+
+            try {
+                if (preparedStatement != null && !preparedStatement.isClosed()) {
+                    preparedStatement.close();
+                }
+            } catch(SQLException e){
+                e.printStackTrace();
+            }
+
+            try {
+                if (connection != null && !connection.isClosed()) {
+                    connection.close();
+                }
+            } catch(SQLException e){
+                e.printStackTrace();
+            }
+        }
+	}
 	
 	// Wifi-List관련
 	// List 데이터 개수 리턴
@@ -254,7 +394,7 @@ public class WifiService {
 	        connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + ListDbFile);
 
             String sql = " delete " +
-                    " from WifiList; ";
+                    " from " + ListDbTable + " ; ";
 
             preparedStatement = connection.prepareStatement(sql);
 
@@ -589,8 +729,8 @@ public class WifiService {
 	            preparedStatement.setString(11, item.getX_SWIFI_CNSTC_YEAR());
 	            preparedStatement.setString(12, item.getX_SWIFI_INOUT_DOOR());
 	            preparedStatement.setString(13, item.getX_SWIFI_REMARS3());
-	            preparedStatement.setString(14, item.getLAT());
-	            preparedStatement.setString(15, item.getLNT());
+	            preparedStatement.setString(14, item.getLNT());
+	            preparedStatement.setString(15, item.getLAT());
 	            preparedStatement.setString(16, item.getWORK_DTTM());
 	            
 	            preparedStatement.addBatch(); // 배치에 넣어놓기
@@ -656,6 +796,114 @@ public class WifiService {
 	    }
 	}
 
+	public ArrayList<Data> getLocation(String Lat, String Lnt) {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		ResultSet rs = null;
+		
+		ArrayList<Data> list = new ArrayList<>();
+		String distance = "";
+		String controlNum = "";
+		String jachigu = "";
+		String wifiName = "";
+		String roadAddress = "";
+		String detailAddress = "";
+		String installLocation = "";
+		String installType = "";
+		String installOrg = "";
+		String serviceType = "";
+		String webType = "";
+		String installYear = "";
+		String inAndOut = "";
+		String wifiProp = "";
+		String LAT = "";
+		String LNT = "";
+		String workDate = "";
+		
+		// 1. 드라이버 로드
+		try {
+			Class.forName("org.sqlite.JDBC");
+		
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		// 2. 커넥션 객체 생성
+		try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + getAbsolutePath() + ListDbFile);
+
+            String sql = " SELECT "
+            		+ "  ROUND(( "
+            		+ "   6371 * acos ( "
+            		+ "   cos ( radians( " + Lat + ") ) "
+            		+ "   * cos( radians( wl.LAT  ) ) "
+            		+ "   * cos( radians( wl.LNT ) - radians(" + Lnt + ") ) "
+            		+ "   + sin ( radians(	" + Lat + ") ) "
+            		+ "   * sin( radians( wl.LAT) ) "
+            		+ "  )), 4)AS getDistance, * "
+            		+ "	FROM WifiList wl "
+            		+ " ORDER BY getDistance asc limit 20;";
+            
+            preparedStatement = connection.prepareStatement(sql);
+            rs = preparedStatement.executeQuery();
+       	 
+	        // 5. 결과 수행
+	        while(rs.next()) {
+	        	
+	        	distance = rs.getString("getDistance");        	
+	            controlNum = rs.getString("controlNum");
+	    		jachigu = rs.getString("jachigu");
+	    		wifiName = rs.getString("wifiName");
+	    		roadAddress = rs.getString("roadAddress");
+	    		detailAddress = rs.getString("detailAddress");
+	    		installLocation = rs.getString("installLocation");
+	    		installType = rs.getString("installType");
+	    		installOrg = rs.getString("installOrg");
+	    		serviceType = rs.getString("serviceType");
+	    		webType = rs.getString("webType");
+	    		installYear = rs.getString("installYear");
+	    		inAndOut = rs.getString("inAndOut");
+	    		wifiProp = rs.getString("wifiProp");
+	    		LAT = rs.getString("LAT");
+	    		LNT = rs.getString("LNT");
+	    		workDate = rs.getString("workDate");
+	            
+	        	Data d = new Data(distance, controlNum, jachigu, wifiName, roadAddress, detailAddress, installLocation, installType, installOrg, serviceType, webType, installYear, inAndOut, wifiProp, LAT, LNT, workDate);
+	    		list.add(d);
+	        }
+            
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+	        // 6. 객체 연결 해제(close)
+	        try {
+	            if (rs != null && !rs.isClosed()) {
+	                rs.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (preparedStatement != null && !preparedStatement.isClosed()) {
+	                preparedStatement.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	
+	        try {
+	            if (connection != null && !connection.isClosed()) {
+	                connection.close();
+	            }
+	        } catch(SQLException e){
+	            e.printStackTrace();
+	        }
+	    }
+		return list;
+	}
+	
 	public static void main(String[] args) {
 		
 		WifiService wifiService = new WifiService();
@@ -669,6 +917,9 @@ public class WifiService {
 //		wifiService.readDataCnt();
 //		wifiService.getWifiInfoFromAPIBatch();
 //		wifiService.readDataCnt();
-				
+		
+//		wifiService.deleteHistory("Wed Jul 27 23:32:59 KST 2022");
+		
+		
 	}
 }
