@@ -25,22 +25,22 @@
 	</form>   
 	
 	<%
-	        	Date now = new Date();
-				ArrayList<Data> list = new ArrayList<>();
-	        		        	
-	        	String lat = request.getParameter("lat");
-	        	String lnt = request.getParameter("lnt");
+  		   	Date now = new Date();
+  			ArrayList<Data> list = new ArrayList<>();
+  			        		        	
+  		    String lat = request.getParameter("lat");
+  		    String lnt = request.getParameter("lnt");
 
-	        	if(lat != null && lnt != null) {
-	    		    String time = now.toString();
-		        	WifiService wifiService2 = new WifiService();
-		    		wifiService2.insertHisroty(lat, lnt, time);
-		    		list = wifiService2.getLocation(lat, lnt);
-	        	} else {
-	        		lat = "0.0";
-	        		lnt = "0.0";
-	        	}
-        	%>
+  		    if(lat != null && lnt != null) {
+  	    	    String time = now.toString();
+  		       	WifiService wifiService2 = new WifiService();
+  		   		wifiService2.insertHistory(lat, lnt, time);
+  		   		list = wifiService2.getLocation(lat, lnt);
+  	       	} else {
+  	        	lat = "0.0";
+  	        	lnt = "0.0";
+ 	        }
+   		%>
 	
 	<br>
 	<table width="100%";>

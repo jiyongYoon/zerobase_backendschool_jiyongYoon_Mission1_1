@@ -173,7 +173,7 @@ public class WifiService {
 	}
 
 	
-	public void insertHisroty(String inputLat, String inputLnt, String getTime) {
+	public void insertHistory(String inputLat, String inputLnt, String getTime) {
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
 		ResultSet rs = null;
