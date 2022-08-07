@@ -711,7 +711,7 @@ public class WifiService {
             		+ " (controlNum, jachigu, wifiName, roadAddress, detailAddress, installLocation, installType, installOrg, serviceType, webType, installYear, inAndOut, wifiProp, LAT, LNT, workDate) "
             		+ " values "
             		+ " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); ";
-            
+            connection.setAutoCommit(false);
             preparedStatement = connection.prepareStatement(sql);
             
             for(Data item : list) {
